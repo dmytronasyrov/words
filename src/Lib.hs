@@ -1,58 +1,69 @@
 module Lib
-    ( grid
-    , languages
-    , formatGrid
+    ( formatGrid
     , outputGrid
     , findWord
     , findWords
     , findWordInLine
+    , skew
+    , zipOverGrid
+    , zipOverGridWith
+    , coordsGrid
+    , gridWithCoords
     ) where
 
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, transpose)
 import Data.Maybe (catMaybes)
 
-type Grid = [String]
+data Cell = Cell (Integer, Integer) Char deriving (Eq, Ord, Show)
+type Grid a = [[a]]
 
-outputGrid :: Grid -> IO ()
+zipOverGrid :: Grid a -> Grid b -> Grid (a, b)
+zipOverGrid = zipWith zip
+
+zipOverGridWith :: (a -> b -> c) -> Grid a -> Grid b -> Grid c
+zipOverGridWith = zipWith . zipWith
+
+coordsGrid :: Grid (Integer, Integer)
+coordsGrid =
+    let rows = map repeat [0..]
+        cols = repeat [0..]
+    in zipOverGrid rows cols
+
+gridWithCoords grid = zipOverGridWith Cell coordsGrid grid
+
+outputGrid :: Grid Char -> IO ()
 outputGrid grid = putStrLn (formatGrid grid)
 
-formatGrid :: Grid -> String
+formatGrid :: Grid Char -> String
 formatGrid = unlines
 
-findWord :: Grid -> String -> Maybe String
+getLines :: Grid Char -> [String]
+getLines grid =
+    let horizontal = grid
+        vertical = transpose grid
+        diagonalFront = diagonalize grid
+        diagonalBack = diagonalize (map reverse grid)
+        lines = horizontal ++ vertical ++ diagonalFront ++ diagonalBack
+    in lines ++ (map reverse lines)
+
+diagonalize :: Grid Char -> Grid Char
+diagonalize = transpose . skew
+
+skew :: Grid Char -> Grid Char
+skew [] = [] 
+skew (l:ls) = l : skew (map indent ls)
+    where indent line = '_' : line
+
+findWord :: Grid Char -> String -> Maybe String
 findWord grid word =
-    let lines = grid ++ (map reverse grid)
+    let lines = getLines grid
         found = or $ map (findWordInLine word) lines
     in if found then Just word else Nothing
 
--- findWords :: Grid -> [String] -> Bool
+findWords :: Grid Char -> [String] -> [String]
 findWords grid words =
     let foundWords = map (findWord grid) words
     in catMaybes foundWords
 
 findWordInLine :: String -> String -> Bool
 findWordInLine = isInfixOf
-
-grid = [ "__C________R___"
-        ,"__SI________U__"
-        ,"__HASKELL____B_"
-        ,"__A__A_____S__Y"
-        ,"__R___B___C____"
-        ,"__PHP____H_____"
-        ,"____S_LREP_____"
-        ,"____I__M_Y__L__"
-        ,"____L_E__T_O___"
-        ,"_________HB____"
-        ,"_________O_____"
-        ,"________CN_____"]
-
-languages = [ "BASIC"
-            , "COBOL"
-            , "CSHARP"
-            , "HASKELL"
-            , "LISP"
-            , "PERL"
-            , "PHP"
-            , "PYTHON"
-            , "RUBY"
-            , "SCHEME"]
