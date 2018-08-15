@@ -47,7 +47,7 @@ cols8 = repeat8 [0..7]
 rows8 = map repeat8 [0..7]
 
 zipOverGrid = zipWith zip
-zipOverGridWith f = zipWith . zipWith
+zipOverGridWith = zipWith . zipWith
 
 grid8 = zipOverGrid rows8 cols8
 
