@@ -6,4 +6,4 @@ import Data
 main :: IO ()
 main = 
   let gwc = gridWithCoords grid
-  outputGrid gwc
+  in outputGrid gwc
